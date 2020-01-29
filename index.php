@@ -2,7 +2,7 @@
 
 function h($g)
 {
-  return htmlspecialchars($g, ENT_QUOTES, 'UFT-8');
+  return htmlspecialchars($g, ENT_QUOTES, 'UTF-8');
 }
 
 try {
@@ -15,6 +15,7 @@ try {
 }
 $dt = clone $thisMonth;
 $next = $dt->modify('+1 month')->format('Y-m');
+//$dtが書き換えられているから、再度作成
 $dt = clone $thisMonth;
 $prev = $dt->modify('-1 month')->format('Y-m');
 $yearMonth = $thisMonth->format('F Y');
@@ -32,15 +33,17 @@ $period = new DatePeriod(
   new DateInterval('P1D'),
   new DateTime('first day of' . $yearMonth . '+1 month')
 );
+$today = new DateTime('today');
 foreach ($period as $day) {
   if ($day->format('w') == 0) {
     //</tr>から始める！
     $body .= '</tr><tr>';
   }
-  $body .= sprintf('<td class="youbi_%d">%d</td>', $day->format('w'), $day->format('d'));
+  $todayClass = ($day->format('Y-m-d') === $today->format('Y-m-d')) ? 'today' : '';
+  $body .= sprintf('<td class="youbi_%d %s">%d</td>', $day->format('w'), $todayClass, $day->format('d'));
 }
 $head = '';
-$firstDayOfNextMonth = new DateTime('first day of' . $yearMonth . '+1 month');
+$firstDayOfNextMonth = new DateTime('first day of' . $yearMonth . ' +1 month');
 while ($firstDayOfNextMonth->format('w') > 0) {
   $head .= sprintf('<td class="gray">%d</td>', $firstDayOfNextMonth->format('d'));
   $firstDayOfNextMonth->add(new DateInterval('P1D'));
@@ -63,12 +66,6 @@ $html = '<tr>' . $tail . $body . $head . '</tr>';
   <table>
     <thead>
       <tr>
-        <!--
-          phpをそのまま打ち込まずに、functionを使ったエスケープする
-          hrefの/はファイルのlocalhostまでで今回は
-          localhost/calendar/?t=2020-02のようなurlにしたいから、
-          /calendar/?t= + [2020-02]ここのカッコ内をphpで求めることにする
-        -->
         <th><a href="/calendar/?t=<?php echo h($prev); ?>">&laquo;</a></th>
         <th colspan="5"><?php echo h($yearMonth); ?></th>
         <th><a href="/calendar/?t=<?php echo h($next); ?>">&raquo;</a></th>
@@ -88,7 +85,6 @@ $html = '<tr>' . $tail . $body . $head . '</tr>';
     </tbody>
     <tfoot>
       <tr>
-        <!-- そのままのurlのときはスラッシュでいいんだ -->
         <th colspan="7"><a href="/calendar/">Today</a></th>
       </tr>
     </tfoot>
