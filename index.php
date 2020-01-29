@@ -1,4 +1,10 @@
 <?php
+
+function h($g)
+{
+  return htmlspecialchars($g, ENT_QUOTES, 'UFT-8');
+}
+
 try {
   if (!isset($_GET['t']) || !preg_match('/\A\d{4}-\d{2}\z/', $_GET['t'])) {
     throw new Exception();
@@ -7,8 +13,19 @@ try {
 } catch (Exception $e) {
   $thisMonth = new DateTime('first day of this month');
 }
-
+$dt = clone $thisMonth;
+$next = $dt->modify('+1 month')->format('Y-m');
+$dt = clone $thisMonth;
+$prev = $dt->modify('-1 month')->format('Y-m');
 $yearMonth = $thisMonth->format('F Y');
+
+$tail = '';
+$lastDayOfPrevMonth = new DateTime('last day of' . $yearMonth . '-1 month');
+while ($lastDayOfPrevMonth->format('w') < 6) {
+  $tail = sprintf('<td class="gray">%d</td>', $lastDayOfPrevMonth->format('d'))  . $tail;
+  $lastDayOfPrevMonth->sub(new DateInterval('P1D'));
+}
+
 $body = '';
 $period = new DatePeriod(
   new DateTime('first day of' . $yearMonth),
@@ -28,14 +45,8 @@ while ($firstDayOfNextMonth->format('w') > 0) {
   $head .= sprintf('<td class="gray">%d</td>', $firstDayOfNextMonth->format('d'));
   $firstDayOfNextMonth->add(new DateInterval('P1D'));
 }
-$prev = '';
-$lastDayOfPrevMonth = new DateTime('last day of' . $yearMonth . '-1 month');
-while ($lastDayOfPrevMonth->format('w') < 6) {
-  $prev = sprintf('<td class="gray">%d</td>', $lastDayOfPrevMonth->format('d'))  . $prev;
-  $lastDayOfPrevMonth->sub(new DateInterval('P1D'));
-}
 
-$html = '<tr>' . $prev . $body . $head . '</tr>';
+$html = '<tr>' . $tail . $body . $head . '</tr>';
 
 ?>
 <!DOCTYPE html>
@@ -51,9 +62,15 @@ $html = '<tr>' . $prev . $body . $head . '</tr>';
   <table>
     <thead>
       <tr>
-        <th><a href="">&laquo;</a></th>
-        <th colspan="5"><?php echo $yearMonth; ?></th>
-        <th><a href="">&raquo;</a></th>
+        <!--
+          phpをそのまま打ち込まずに、functionを使ったエスケープする
+          hrefの/はファイルのlocalhostまでで今回は
+          localhost/calendar/?t=2020-02のようなurlにしたいから、
+          /calendar/?t= + [2020-02]ここのカッコ内をphpで求めることにする
+        -->
+        <th><a href="/calendar/?t=<?php echo h($prev); ?>">&laquo;</a></th>
+        <th colspan="5"><?php echo h($yearMonth); ?></th>
+        <th><a href="/calendar/?t=<?php echo h($next); ?>">&raquo;</a></th>
       </tr>
     </thead>
     <tbody>
@@ -70,7 +87,8 @@ $html = '<tr>' . $prev . $body . $head . '</tr>';
     </tbody>
     <tfoot>
       <tr>
-        <th colspan="7"><a href="">Today</a></th>
+        <!-- そのままのurlのときはスラッシュでいいんだ -->
+        <th colspan="7"><a href="/calendar/">Today</a></th>
       </tr>
     </tfoot>
   </table>
