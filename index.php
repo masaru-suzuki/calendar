@@ -45,6 +45,7 @@ while ($firstDayOfNextMonth->format('w') > 0) {
   $head .= sprintf('<td class="gray">%d</td>', $firstDayOfNextMonth->format('d'));
   $firstDayOfNextMonth->add(new DateInterval('P1D'));
 }
+var_dump($thisMonth);
 
 $html = '<tr>' . $tail . $body . $head . '</tr>';
 
