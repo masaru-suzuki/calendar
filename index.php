@@ -1,57 +1,12 @@
 <?php
+require 'calendar.php';
 
 function h($g)
 {
   return htmlspecialchars($g, ENT_QUOTES, 'UTF-8');
 }
 
-try {
-  if (!isset($_GET['t']) || !preg_match('/\A\d{4}-\d{2}\z/', $_GET['t'])) {
-    throw new Exception();
-  }
-  $thisMonth = new DateTime($_GET['t']);
-} catch (Exception $e) {
-  $thisMonth = new DateTime('first day of this month');
-}
-$dt = clone $thisMonth;
-$next = $dt->modify('+1 month')->format('Y-m');
-//$dtが書き換えられているから、再度作成
-$dt = clone $thisMonth;
-$prev = $dt->modify('-1 month')->format('Y-m');
-$yearMonth = $thisMonth->format('F Y');
-
-$tail = '';
-$lastDayOfPrevMonth = new DateTime('last day of' . $yearMonth . '-1 month');
-while ($lastDayOfPrevMonth->format('w') < 6) {
-  $tail = sprintf('<td class="gray">%d</td>', $lastDayOfPrevMonth->format('d'))  . $tail;
-  $lastDayOfPrevMonth->sub(new DateInterval('P1D'));
-}
-
-$body = '';
-$period = new DatePeriod(
-  new DateTime('first day of' . $yearMonth),
-  new DateInterval('P1D'),
-  new DateTime('first day of' . $yearMonth . '+1 month')
-);
-$today = new DateTime('today');
-foreach ($period as $day) {
-  if ($day->format('w') == 0) {
-    //</tr>から始める！
-    $body .= '</tr><tr>';
-  }
-  $todayClass = ($day->format('Y-m-d') === $today->format('Y-m-d')) ? 'today' : '';
-  $body .= sprintf('<td class="youbi_%d %s">%d</td>', $day->format('w'), $todayClass, $day->format('d'));
-}
-$head = '';
-$firstDayOfNextMonth = new DateTime('first day of' . $yearMonth . ' +1 month');
-while ($firstDayOfNextMonth->format('w') > 0) {
-  $head .= sprintf('<td class="gray">%d</td>', $firstDayOfNextMonth->format('d'));
-  $firstDayOfNextMonth->add(new DateInterval('P1D'));
-}
-var_dump($thisMonth);
-
-$html = '<tr>' . $tail . $body . $head . '</tr>';
-
+$calendar = new \MyApp\Calendar();
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -66,9 +21,9 @@ $html = '<tr>' . $tail . $body . $head . '</tr>';
   <table>
     <thead>
       <tr>
-        <th><a href="/calendar/?t=<?php echo h($prev); ?>">&laquo;</a></th>
-        <th colspan="5"><?php echo h($yearMonth); ?></th>
-        <th><a href="/calendar/?t=<?php echo h($next); ?>">&raquo;</a></th>
+        <th><a href="/calendar/?t=<?php echo h($calendar->prev); ?>">&laquo;</a></th>
+        <th colspan="5"><?php echo h($calendar->yearMonth); ?></th>
+        <th><a href="/calendar/?t=<?php echo h($calendar->next); ?>">&raquo;</a></th>
       </tr>
     </thead>
     <tbody>
@@ -81,7 +36,7 @@ $html = '<tr>' . $tail . $body . $head . '</tr>';
         <td>Fri</td>
         <td>Sat</td>
       </tr>
-      <?php echo $html; ?>
+      <?php echo $calendar->show(); ?>
     </tbody>
     <tfoot>
       <tr>
